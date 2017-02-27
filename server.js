@@ -9,6 +9,7 @@ var argv = require("yargs").argv;
 const port = config.get("App").port;
 const facebookClientID = config.get("Facebook").facebookAPPClientID;
 const facebookSecret = config.get("Facebook").facebookAPPSecret;
+const facebookCallbackUrl = config.get("Facebook").facebookCallbackUrl;
 
 // sendTokenUrl should be url to call and post token data: localhost:3001/token
 var tokenPath = SplitPath(argv.sendTokenUrl);
@@ -21,7 +22,7 @@ passport.use(new Strategy(
     {
         clientID: facebookClientID,
         clientSecret: facebookSecret,
-        callbackURL: "http://localhost:3000/redirect"
+        callbackURL: facebookCallbackUrl
     }, function(accessToken, refreshToken, profile, cb) {
         OnSuccess(accessToken, profile);
         console.log("access token:", accessToken, "profile", profile);
