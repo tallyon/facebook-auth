@@ -4,7 +4,7 @@
 node server.js --sendTokenUrl=localhost:3001/token --redirectUrl=google.pl:80/
 ```
 This will start facebook authorization server that will listen on localhost:3000/auth and redirect to facebook auth dialog.
-Upon successfull authorization server will POST the json token to 'sendTokenUrl' with body:
+Upon successful authorization server will POST the json token to 'sendTokenUrl' with body:
 
 ```json
 {
@@ -21,3 +21,6 @@ node index.js
 ```
 
 which will start second server on port 3001 that will be listening on port 3001 for POST /token and will print received token in the console.
+
+## Config
+Config file can be found in /config/default.json
