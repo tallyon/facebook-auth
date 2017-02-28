@@ -17,6 +17,9 @@ var tokenPath = SplitPath(argv.sendTokenUrl);
 // redirectUrl should be redirect url to provide to passport
 var redirectPath = SplitPath(argv.redirectUrl);
 
+// callbackPath is url that is provided to passport-facebook as callback url
+var callbackPath = SplitPath(facebookCallbackUrl);
+
 // Configure passport-facebook
 passport.use(new Strategy(
     {
@@ -24,8 +27,7 @@ passport.use(new Strategy(
         clientSecret: facebookSecret,
         callbackURL: facebookCallbackUrl
     }, function(accessToken, refreshToken, profile, cb) {
-        OnSuccess(accessToken, profile);
-        console.log("access token:", accessToken, "profile", profile);
+        SendToken(accessToken, profile);
         return cb(null, profile);
     }
     ));
@@ -38,18 +40,8 @@ server.use(passport.initialize());
 // GET /auth will start authentication and show facebook dialog
 server.get("/auth", passport.authenticate("facebook", { session: false }));
 
-// GET /redirect will check if user is authenticated and either redirect to GET /success or GET /err
-server.get("/redirect",
-    passport.authenticate("facebook", { session: false, successRedirect: "/success", failureRedirect: "/err" }));
-
-server.get("/err", function(req, res) {
-    res.status(401).json({message:"ERROR"}).end();
-});
-
-// GET /success will redirect to path provided in command line argument redirectUrl
-server.get("/success", function(req, res) {
-    res.redirect(redirectPath.fullPath);
-});
+// On successull authentication redirect to url provided in command line argument redirectUrl
+server.get(callbackPath.path, passport.authenticate("facebook", { session: false, successRedirect: redirectPath.fullPath, failureRedirect: "/auth" }));
 
 server.listen(3000, function() {
     console.log("Listening on port", port);
@@ -57,18 +49,18 @@ server.listen(3000, function() {
     console.log("User will be redirected to", redirectPath.fullPath);
 });
 
-function OnError() {
-    err = new Error("failed to authenticate");
-    console.log(err);
-}
-
 // Sends authentication token via POST method to url provided in command line argument sendTokenUrl
-function OnSuccess(token, profile) {
-    var sendSuccess = {
-        "token": token,
-        // "timestamp": Date.now(),
-        // "profile": profile
-    };
+function SendToken(token, profile) {
+
+    var sendSuccess = {};
+
+    // Check if token is null
+    if(token == null || token.length < 1) {
+        sendSuccess.error = "error while authenticating, no token received"
+    }
+    else {
+        sendSuccess.token = token;
+    }
 
     var r = http.request({
         host: tokenPath.host,
@@ -82,7 +74,6 @@ function OnSuccess(token, profile) {
 
     });
     r.write(JSON.stringify(sendSuccess));
-    console.log("sending token via POST to", tokenPath.fullPath);
     r.end();
 }
 
@@ -94,6 +85,20 @@ function OnSuccess(token, profile) {
 //      fullPath
 //  }
 function SplitPath(arg) {
+
+    // Remove http:// / https:// from start of url
+    var removedProtocolString = "";
+
+    if(arg.search("http://") == 0) {
+        removedProtocolString = "http://";
+    }
+    else if(arg.search("https://") == 0) {
+        removedProtocolString = "https://";
+    }
+    
+    // Trim removed http/https protocol string from the beginning of the string
+    arg = arg.substr(removedProtocolString.length);
+
     var hostname = arg.split(":")[0];
     var port = arg.split(":")[1].split("/")[0];
     var splitPath = arg.split("/");
@@ -107,7 +112,7 @@ function SplitPath(arg) {
         host: hostname,
         port: port,
         path: path,
-        fullPath: "http://" + hostname + ":" + port + path
+        fullPath: ((removedProtocolString.length > 0) ? removedProtocolString : "http://") + hostname + ":" + port + path
     }
     return retVal;
 }
