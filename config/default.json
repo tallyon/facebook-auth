@@ -3,8 +3,8 @@
         "port": 3000
     },
     "Facebook": {
-        "facebookAPPClientID": "230446527361263",
-        "facebookAPPSecret": "a9fe50139dd19d6583e5c686b84c33d9",
-        "facebookCallbackUrl": "http://localhost:3000/redirect"
+        "facebookAPPClientID": "",
+        "facebookAPPSecret": "",
+        "facebookCallbackUrl": "http://localhost:3000/callback"
     }
 }
